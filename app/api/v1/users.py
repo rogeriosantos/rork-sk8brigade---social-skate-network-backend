@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func, and_, or_
 from sqlalchemy.orm import selectinload
@@ -7,6 +7,7 @@ from uuid import UUID
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.cloudinary import upload_image, delete_image
 from app.models.user import User, SkaterProfile, ShopProfile, UserFollow
 from app.schemas.user import (
     UserResponse, UserFullResponse, UserUpdate, 
@@ -151,6 +152,65 @@ async def update_shop_profile(
         await db.refresh(current_user)
     
     return current_user
+
+
+@router.post("/upload-avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Upload user avatar image"""
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image"
+        )
+    
+    # Check file size (5MB limit)
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size must be less than 5MB"
+        )
+    
+    # Delete old avatar if exists
+    if current_user.avatar:
+        try:
+            # Extract public_id from URL
+            old_public_id = current_user.avatar.split('/')[-1].split('.')[0]
+            if old_public_id:
+                await delete_image(f"sk8brigade/avatars/{old_public_id}")
+        except Exception:
+            pass  # Continue even if deletion fails
+    
+    # Upload new image
+    result = await upload_image(
+        content,
+        folder="sk8brigade/avatars",
+        public_id=f"user_{current_user.id}"
+    )
+    
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {result['error']}"
+        )
+    
+    # Update user avatar URL
+    await db.execute(
+        update(User)
+        .where(User.id == current_user.id)
+        .values(avatar=result["url"])
+    )
+    await db.commit()
+    
+    return {
+        "message": "Avatar uploaded successfully",
+        "avatar_url": result["url"]
+    }
 
 
 @router.post("/{user_id}/follow")

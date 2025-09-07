@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # File uploads (if needed)
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     
+    # Cloudinary Configuration
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
