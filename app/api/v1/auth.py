@@ -60,7 +60,9 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         email=user_data.email,
         display_name=user_data.display_name,
         hashed_password=hashed_password,
-        is_shop=(user_data.account_type == "skateshop")  # Convert to boolean for database
+        is_shop=(user_data.account_type == "skateshop"),  # Convert to boolean
+        follower_count=0,
+        following_count=0
     )
     
     db.add(db_user)
@@ -83,7 +85,7 @@ async def get_current_user_info(
 ):
     """Get current user information"""
     try:
-        # Build response data with database field names
+        # Build response data with actual database field names
         response_data = {
             "id": str(current_user.id),
             "username": getattr(current_user, 'username', ''),

@@ -5,7 +5,7 @@ from app.models.post import Post, PostLike, PostComment
 
 __all__ = [
     "User",
-    "SkateSetup", 
+    "SkateSetup",
     "Follow",
     "Spot",
     "SpotImage",

@@ -33,8 +33,7 @@ async def get_users(
         query = query.where(search_filter)
     
     if account_type:
-        is_shop = (account_type == "skateshop")
-        query = query.where(User.is_shop == is_shop)
+        query = query.where(User.account_type == account_type)
     
     query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
     

@@ -15,19 +15,28 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     display_name = Column(String(100), nullable=False)
     bio = Column(Text)
-    profile_picture = Column(String(500))  # Match database schema
-    is_shop = Column(Boolean, nullable=False)  # Match database schema
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    follower_count = Column(Integer, default=0)  # Match database schema
-    following_count = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    profile_picture = Column(String(500))  # EXISTS in database
+    is_shop = Column(Boolean, nullable=False)  # ACTUAL field name in database
+    is_active = Column(Boolean, nullable=False)
+    is_verified = Column(Boolean, nullable=False)
+    follower_count = Column(Integer, nullable=False)  # ACTUAL field name in database
+    following_count = Column(Integer, nullable=False)
+    
+    # Relationships - match actual database tables
+    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
+    sessions_created = relationship("Session", back_populates="creator", cascade="all, delete-orphan")  
+    spots_created = relationship("Spot", back_populates="creator", cascade="all, delete-orphan")
+    skate_setups = relationship("SkateSetup", back_populates="user", cascade="all, delete-orphan")
+    follows_as_follower = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
+    follows_as_followed = relationship("Follow", foreign_keys="Follow.followed_id", back_populates="followed")
+    following_count = Column(Integer)
     
     # Relationships - match actual database tables
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")

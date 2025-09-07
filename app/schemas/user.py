@@ -43,7 +43,7 @@ class UserBase(BaseModel):
     email: EmailStr
     display_name: str
     bio: Optional[str] = None
-    is_shop: bool  # Match database schema
+    is_shop: bool = False  # ACTUAL database field
 
 
 class UserCreate(UserBase):
@@ -53,13 +53,13 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
-    profile_picture: Optional[str] = None  # Match database schema
+    profile_picture: Optional[str] = None  # ACTUAL database field
 
 
 class UserResponse(UserBase):
     id: UUID
-    profile_picture: Optional[str] = None  # Match database schema
-    follower_count: int  # Match database schema
+    profile_picture: Optional[str] = None  # ACTUAL database field
+    follower_count: int  # ACTUAL database field
     following_count: int
     is_following: Optional[bool] = None
     is_active: bool
@@ -72,4 +72,3 @@ class UserResponse(UserBase):
 
 class UserFullResponse(UserResponse):
     skate_setups: Optional[List[SkateSetupResponse]] = None
-    # For shops - we could add shop-specific data here if needed
