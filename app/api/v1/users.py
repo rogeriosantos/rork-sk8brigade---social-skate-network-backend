@@ -120,58 +120,47 @@ async def update_user_profile(
     return current_user
 
 
-@router.put("/skater-profile", response_model=UserFullResponse)
-async def update_skater_profile(
-    profile_update: SkaterProfileUpdate,
+@router.post("/skate-setup", response_model=dict)
+async def create_skate_setup(
+    setup_data: dict,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Update current user's skater profile"""
-    if current_user.account_type != "skater":
+    """Create a new skate setup for the current user"""
+    if current_user.is_shop:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only skater accounts can update skater profile"
+            detail="Shop accounts cannot create skate setups"
         )
     
-    update_data = profile_update.model_dump(exclude_unset=True)
+    from app.models.user import SkateSetup
     
-    if update_data:
-        await db.execute(
-            update(SkaterProfile)
-            .where(SkaterProfile.user_id == current_user.id)
-            .values(**update_data)
-        )
-        await db.commit()
-        await db.refresh(current_user)
+    # Create new skate setup
+    setup = SkateSetup(
+        user_id=current_user.id,
+        deck_brand=setup_data.get("deck_brand", ""),
+        deck_size=setup_data.get("deck_size", ""),
+        trucks=setup_data.get("trucks", ""),
+        wheels=setup_data.get("wheels", ""),
+        bearings=setup_data.get("bearings", ""),
+        grip_tape=setup_data.get("grip_tape", ""),
+        photo_url=setup_data.get("photo_url")
+    )
     
-    return current_user
-
-
-@router.put("/shop-profile", response_model=UserFullResponse)
-async def update_shop_profile(
-    profile_update: ShopProfileUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Update current user's shop profile"""
-    if current_user.account_type != "skateshop":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only skateshop accounts can update shop profile"
-        )
+    db.add(setup)
+    await db.commit()
+    await db.refresh(setup)
     
-    update_data = profile_update.model_dump(exclude_unset=True)
-    
-    if update_data:
-        await db.execute(
-            update(ShopProfile)
-            .where(ShopProfile.user_id == current_user.id)
-            .values(**update_data)
-        )
-        await db.commit()
-        await db.refresh(current_user)
-    
-    return current_user
+    return {
+        "id": str(setup.id),
+        "deck_brand": setup.deck_brand,
+        "deck_size": setup.deck_size,
+        "trucks": setup.trucks,
+        "wheels": setup.wheels,
+        "bearings": setup.bearings,
+        "grip_tape": setup.grip_tape,
+        "photo_url": setup.photo_url,
+    }
 
 
 @router.post("/upload-avatar")
@@ -252,11 +241,12 @@ async def follow_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     # Check if already following
+    from app.models.user import Follow
     existing_follow = await db.execute(
-        select(UserFollow).where(
+        select(Follow).where(
             and_(
-                UserFollow.follower_id == current_user.id,
-                UserFollow.following_id == user_id
+                Follow.follower_id == current_user.id,
+                Follow.followed_id == user_id
             )
         )
     )
@@ -268,7 +258,7 @@ async def follow_user(
         )
     
     # Create follow relationship
-    follow = UserFollow(follower_id=current_user.id, following_id=user_id)
+    follow = Follow(follower_id=current_user.id, followed_id=user_id)
     db.add(follow)
     
     # Update follow counts
@@ -281,7 +271,7 @@ async def follow_user(
     await db.execute(
         update(User)
         .where(User.id == user_id)
-        .values(followers_count=User.followers_count + 1)
+        .values(follower_count=User.follower_count + 1)
     )
     
     await db.commit()
@@ -297,11 +287,12 @@ async def unfollow_user(
 ):
     """Unfollow a user"""
     # Find and delete follow relationship
+    from app.models.user import Follow
     result = await db.execute(
-        select(UserFollow).where(
+        select(Follow).where(
             and_(
-                UserFollow.follower_id == current_user.id,
-                UserFollow.following_id == user_id
+                Follow.follower_id == current_user.id,
+                Follow.followed_id == user_id
             )
         )
     )
@@ -325,7 +316,7 @@ async def unfollow_user(
     await db.execute(
         update(User)
         .where(User.id == user_id)
-        .values(followers_count=User.followers_count - 1)
+        .values(follower_count=User.follower_count - 1)
     )
     
     await db.commit()
@@ -341,10 +332,11 @@ async def get_user_followers(
     db: AsyncSession = Depends(get_db)
 ):
     """Get user's followers"""
+    from app.models.user import Follow
     query = (
         select(User)
-        .join(UserFollow, User.id == UserFollow.follower_id)
-        .where(UserFollow.following_id == user_id)
+        .join(Follow, User.id == Follow.follower_id)
+        .where(Follow.followed_id == user_id)
         .offset(skip)
         .limit(limit)
     )
@@ -363,10 +355,11 @@ async def get_user_following(
     db: AsyncSession = Depends(get_db)
 ):
     """Get users that this user is following"""
+    from app.models.user import Follow
     query = (
         select(User)
-        .join(UserFollow, User.id == UserFollow.following_id)
-        .where(UserFollow.follower_id == user_id)
+        .join(Follow, User.id == Follow.followed_id)
+        .where(Follow.follower_id == user_id)
         .offset(skip)
         .limit(limit)
     )

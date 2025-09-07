@@ -30,9 +30,9 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships - match actual database tables
-    posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
-    sessions_hosted = relationship("Session", back_populates="host", cascade="all, delete-orphan")  
-    spots_created = relationship("Spot", back_populates="created_by", cascade="all, delete-orphan")
+    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
+    sessions_created = relationship("Session", back_populates="creator", cascade="all, delete-orphan")  
+    spots_created = relationship("Spot", back_populates="creator", cascade="all, delete-orphan")
     skate_setups = relationship("SkateSetup", back_populates="user", cascade="all, delete-orphan")
     follows_as_follower = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     follows_as_followed = relationship("Follow", foreign_keys="Follow.followed_id", back_populates="followed")
