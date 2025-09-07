@@ -61,6 +61,8 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         display_name=user_data.display_name,
         hashed_password=hashed_password,
         is_shop=(user_data.account_type == "skateshop"),  # Convert to boolean
+        is_active=True,
+        is_verified=False,
         follower_count=0,
         following_count=0
     )

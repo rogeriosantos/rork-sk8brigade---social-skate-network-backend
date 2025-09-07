@@ -23,20 +23,11 @@ class User(Base):
     display_name = Column(String(100), nullable=False)
     bio = Column(Text)
     profile_picture = Column(String(500))  # EXISTS in database
-    is_shop = Column(Boolean, nullable=False)  # ACTUAL field name in database
-    is_active = Column(Boolean, nullable=False)
-    is_verified = Column(Boolean, nullable=False)
-    follower_count = Column(Integer, nullable=False)  # ACTUAL field name in database
-    following_count = Column(Integer, nullable=False)
-    
-    # Relationships - match actual database tables
-    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
-    sessions_created = relationship("Session", back_populates="creator", cascade="all, delete-orphan")  
-    spots_created = relationship("Spot", back_populates="creator", cascade="all, delete-orphan")
-    skate_setups = relationship("SkateSetup", back_populates="user", cascade="all, delete-orphan")
-    follows_as_follower = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
-    follows_as_followed = relationship("Follow", foreign_keys="Follow.followed_id", back_populates="followed")
-    following_count = Column(Integer)
+    is_shop = Column(Boolean, nullable=False, default=False)  # ACTUAL field name in database
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_verified = Column(Boolean, nullable=False, default=False)
+    follower_count = Column(Integer, nullable=False, default=0)  # ACTUAL field name in database
+    following_count = Column(Integer, nullable=False, default=0)
     
     # Relationships - match actual database tables
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
