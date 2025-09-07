@@ -30,10 +30,10 @@ class Session(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    creator = relationship("User", back_populates="sessions_created")
-    spot = relationship("Spot", back_populates="sessions")
+    creator = relationship("User")
+    spot = relationship("Spot")
     participants = relationship("SessionParticipant", back_populates="session", cascade="all, delete-orphan")
-    posts = relationship("Post", back_populates="session")
+    posts = relationship("Post")
 
 
 class SessionParticipant(Base):

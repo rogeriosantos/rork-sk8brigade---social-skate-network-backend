@@ -31,8 +31,8 @@ class Spot(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    creator = relationship("User", back_populates="spots_created")
-    sessions = relationship("Session", back_populates="spot")
+    creator = relationship("User")
+    sessions = relationship("Session")
     ratings = relationship("SpotRating", back_populates="spot", cascade="all, delete-orphan")
     images = relationship("SpotImage", back_populates="spot", cascade="all, delete-orphan")
 

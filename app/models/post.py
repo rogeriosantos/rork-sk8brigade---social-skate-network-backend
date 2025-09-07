@@ -31,8 +31,8 @@ class Post(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    author = relationship("User", back_populates="posts")
-    session = relationship("Session", back_populates="posts")
+    author = relationship("User")
+    session = relationship("Session")
     spot = relationship("Spot")
     likes = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")
