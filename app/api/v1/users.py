@@ -8,11 +8,8 @@ from uuid import UUID
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.cloudinary import upload_image, delete_image
-from app.models.user import User, SkaterProfile, ShopProfile, UserFollow
-from app.schemas.user import (
-    UserResponse, UserFullResponse, UserUpdate, 
-    SkaterProfileUpdate, ShopProfileUpdate
-)
+from app.models.user import User
+from app.schemas.user import UserResponse, UserFullResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -36,7 +33,8 @@ async def get_users(
         query = query.where(search_filter)
     
     if account_type:
-        query = query.where(User.account_type == account_type)
+        is_shop = (account_type == "skateshop")
+        query = query.where(User.is_shop == is_shop)
     
     query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
     
@@ -53,10 +51,7 @@ async def get_user(
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """Get user by ID with full profile information"""
-    query = select(User).options(
-        selectinload(User.skater_profile),
-        selectinload(User.shop_profile)
-    ).where(User.id == user_id, User.is_active == True)
+    query = select(User).where(User.id == user_id, User.is_active == True)
     
     result = await db.execute(query)
     user = result.scalar_one_or_none()
@@ -66,17 +61,42 @@ async def get_user(
     
     # Check if current user follows this user
     if current_user:
+        from app.models.user import Follow
         follow_result = await db.execute(
-            select(UserFollow).where(
+            select(Follow).where(
                 and_(
-                    UserFollow.follower_id == current_user.id,
-                    UserFollow.following_id == user_id
+                    Follow.follower_id == current_user.id,
+                    Follow.followed_id == user_id
                 )
             )
         )
         user.is_following = follow_result.scalar_one_or_none() is not None
     
-    return user
+    # Build response with skate setups if not a shop
+    response_data = user.__dict__.copy()
+    response_data["id"] = str(user.id)
+    
+    if not user.is_shop:
+        from app.models.user import SkateSetup
+        setups_result = await db.execute(
+            select(SkateSetup).where(SkateSetup.user_id == user.id)
+        )
+        setups = setups_result.scalars().all()
+        response_data["skate_setups"] = [
+            {
+                "id": str(setup.id),
+                "deck_brand": setup.deck_brand,
+                "deck_size": setup.deck_size,
+                "trucks": setup.trucks,
+                "wheels": setup.wheels,
+                "bearings": setup.bearings,
+                "grip_tape": setup.grip_tape,
+                "photo_url": setup.photo_url,
+            }
+            for setup in setups
+        ]
+    
+    return response_data
 
 
 @router.put("/profile", response_model=UserFullResponse)

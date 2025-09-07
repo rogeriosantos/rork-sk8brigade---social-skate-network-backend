@@ -4,31 +4,38 @@ from datetime import datetime
 from uuid import UUID
 
 
-class SkateSetupBase(BaseModel):
-    board: Dict[str, str]
-    trucks: Dict[str, str]
-    wheels: Dict[str, str]
-    bearings: Dict[str, str]
+class SkateSetupResponse(BaseModel):
+    id: UUID
+    deck_brand: str
+    deck_size: str
+    trucks: str
+    wheels: str
+    bearings: str
+    grip_tape: str
+    photo_url: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
 
 
-class SkateSkill(BaseModel):
-    name: str
-    level: str  # 'Beginner', 'Intermediate', 'Advanced', 'Pro'
+class SkateSetupCreate(BaseModel):
+    deck_brand: str
+    deck_size: str
+    trucks: str
+    wheels: str
+    bearings: str
+    grip_tape: str
+    photo_url: Optional[str] = None
 
 
-class SkatePreferences(BaseModel):
-    style: List[str]
-    favorite_spots: List[str]
-    session_times: List[str]
-
-
-class ShopInfo(BaseModel):
-    name: str
-    description: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    brands: List[str]
+class SkateSetupUpdate(BaseModel):
+    deck_brand: Optional[str] = None
+    deck_size: Optional[str] = None
+    trucks: Optional[str] = None
+    wheels: Optional[str] = None
+    bearings: Optional[str] = None
+    grip_tape: Optional[str] = None
+    photo_url: Optional[str] = None
 
 
 class UserBase(BaseModel):
@@ -36,8 +43,7 @@ class UserBase(BaseModel):
     email: EmailStr
     display_name: str
     bio: Optional[str] = None
-    location: Optional[str] = None
-    account_type: str  # 'skater' or 'skateshop'
+    is_shop: bool  # Match database schema
 
 
 class UserCreate(UserBase):
@@ -47,21 +53,13 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
-    location: Optional[str] = None
-    avatar: Optional[str] = None
-
-
-class UserUpdate(BaseModel):
-    display_name: Optional[str] = None
-    bio: Optional[str] = None
-    location: Optional[str] = None
-    avatar: Optional[str] = None
+    profile_picture: Optional[str] = None  # Match database schema
 
 
 class UserResponse(UserBase):
     id: UUID
-    avatar: Optional[str] = None
-    followers_count: int
+    profile_picture: Optional[str] = None  # Match database schema
+    follower_count: int  # Match database schema
     following_count: int
     is_following: Optional[bool] = None
     is_active: bool
@@ -72,96 +70,6 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
-class SkaterProfileResponse(BaseModel):
-    setup: Optional[SkateSetupBase] = None
-    skills: Optional[List[SkateSkill]] = None
-    preferences: Optional[SkatePreferences] = None
-    joined_shops: Optional[List[str]] = None
-    
-    class Config:
-        from_attributes = True
-
-
-class ShopProfileResponse(BaseModel):
-    name: str
-    description: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    brands: List[str]
-    
-    class Config:
-        from_attributes = True
-
-
 class UserFullResponse(UserResponse):
-    skater_profile: Optional[SkaterProfileResponse] = None
-    shop_profile: Optional[ShopProfileResponse] = None
-
-
-class SkaterProfileUpdate(BaseModel):
-    setup: Optional[Dict[str, Any]] = None
-    skills: Optional[List[str]] = None
-    preferences: Optional[Dict[str, Any]] = None
-
-
-class ShopProfileUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    brands: Optional[List[str]] = None
-    id: UUID
-    avatar: Optional[str] = None
-    followers_count: int
-    following_count: int
-    is_following: Optional[bool] = None
-    is_active: bool
-    is_verified: bool
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class SkaterProfileResponse(BaseModel):
-    setup: Optional[SkateSetupBase] = None
-    skills: Optional[List[SkateSkill]] = None
-    preferences: Optional[SkatePreferences] = None
-    joined_shops: Optional[List[str]] = None
-    
-    class Config:
-        from_attributes = True
-
-
-class ShopProfileResponse(BaseModel):
-    name: str
-    description: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    brands: List[str]
-    
-    class Config:
-        from_attributes = True
-
-
-class UserFullResponse(UserResponse):
-    skater_profile: Optional[SkaterProfileResponse] = None
-    shop_profile: Optional[ShopProfileResponse] = None
-
-
-class SkaterProfileUpdate(BaseModel):
-    setup: Optional[SkateSetupBase] = None
-    skills: Optional[List[SkateSkill]] = None
-    preferences: Optional[SkatePreferences] = None
-
-
-class ShopProfileUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    brands: Optional[List[str]] = None
+    skate_setups: Optional[List[SkateSetupResponse]] = None
+    # For shops - we could add shop-specific data here if needed

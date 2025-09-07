@@ -12,7 +12,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     display_name: str
-    account_type: str  # 'skater' or 'skateshop'
+    account_type: str  # 'skater' or 'skateshop' - will be converted to is_shop boolean
     
 
 class Token(BaseModel):
