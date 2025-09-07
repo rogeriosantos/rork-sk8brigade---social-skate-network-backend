@@ -114,9 +114,23 @@ async def update_user_profile(
             .values(**update_data)
         )
         await db.commit()
-        await db.refresh(current_user)
+        
+        # Reload the user with skate_setups relationship
+        result = await db.execute(
+            select(User)
+            .options(selectinload(User.skate_setups))
+            .where(User.id == current_user.id)
+        )
+        updated_user = result.scalar_one()
+        return updated_user
     
-    return current_user
+    # If no update data, return current user with loaded skate_setups
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.skate_setups))
+        .where(User.id == current_user.id)
+    )
+    return result.scalar_one()
 
 
 @router.post("/skate-setup", response_model=dict)

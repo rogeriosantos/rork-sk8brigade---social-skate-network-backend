@@ -13,6 +13,8 @@ class SkateSetupResponse(BaseModel):
     bearings: str
     grip_tape: str
     photo_url: Optional[str] = None
+    user_id: UUID
+    created_at: datetime
     
     class Config:
         from_attributes = True
@@ -43,7 +45,8 @@ class UserBase(BaseModel):
     email: EmailStr
     display_name: str
     bio: Optional[str] = None
-    is_shop: bool = False  # ACTUAL database field
+    profile_picture: Optional[str] = None
+    is_shop: bool
 
 
 class UserCreate(UserBase):
@@ -53,15 +56,13 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
-    profile_picture: Optional[str] = None  # ACTUAL database field
+    profile_picture: Optional[str] = None
 
 
 class UserResponse(UserBase):
     id: UUID
-    profile_picture: Optional[str] = None  # ACTUAL database field
-    follower_count: int  # ACTUAL database field
+    follower_count: int
     following_count: int
-    is_following: Optional[bool] = None
     is_active: bool
     is_verified: bool
     created_at: datetime
