@@ -96,7 +96,88 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=UserFullResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+@router.get("/me")
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Get current user information"""
-    return current_user
+    try:
+        from app.models.user import SkaterProfile, ShopProfile
+        
+        # Build basic response data with safe attribute access
+        response_data = {
+            "id": str(current_user.id),
+            "username": getattr(current_user, 'username', ''),
+            "email": getattr(current_user, 'email', ''),
+            "display_name": getattr(current_user, 'display_name', ''),
+            "bio": getattr(current_user, 'bio', None),
+            "location": getattr(current_user, 'location', None),
+            "account_type": getattr(current_user, 'account_type', ''),
+            "avatar": getattr(current_user, 'avatar', None),
+            "followers_count": getattr(current_user, 'followers_count', 0),
+            "following_count": getattr(current_user, 'following_count', 0),
+            "is_active": getattr(current_user, 'is_active', True),
+            "is_verified": getattr(current_user, 'is_verified', False),
+            "created_at": current_user.created_at.isoformat() if hasattr(current_user, 'created_at') and current_user.created_at else None,
+            "skater_profile": None,
+            "shop_profile": None
+        }
+        
+        # Get skater profile if user is a skater
+        if current_user.account_type == "skater":
+            try:
+                skater_result = await db.execute(
+                    select(SkaterProfile).where(SkaterProfile.user_id == current_user.id)
+                )
+                skater_profile = skater_result.scalar_one_or_none()
+                if skater_profile:
+                    response_data["skater_profile"] = {
+                        "setup": skater_profile.setup or {},
+                        "skills": skater_profile.skills or [],
+                        "preferences": skater_profile.preferences or {},
+                        "joined_shops": skater_profile.joined_shops or []
+                    }
+            except Exception as profile_error:
+                print(f"Error loading skater profile: {str(profile_error)}")
+                response_data["skater_profile"] = {
+                    "setup": {},
+                    "skills": [],
+                    "preferences": {},
+                    "joined_shops": []
+                }
+        
+        # Get shop profile if user is a skateshop
+        elif current_user.account_type == "skateshop":
+            try:
+                shop_result = await db.execute(
+                    select(ShopProfile).where(ShopProfile.user_id == current_user.id)
+                )
+                shop_profile = shop_result.scalar_one_or_none()
+                if shop_profile:
+                    response_data["shop_profile"] = {
+                        "name": getattr(shop_profile, 'name', ''),
+                        "description": getattr(shop_profile, 'description', ''),
+                        "address": getattr(shop_profile, 'address', ''),
+                        "phone": getattr(shop_profile, 'phone', ''),
+                        "website": getattr(shop_profile, 'website', ''),
+                        "brands": getattr(shop_profile, 'brands', [])
+                    }
+            except Exception as profile_error:
+                print(f"Error loading shop profile: {str(profile_error)}")
+                response_data["shop_profile"] = {
+                    "name": "",
+                    "description": "",
+                    "address": "",
+                    "phone": "",
+                    "website": "",
+                    "brands": []
+                }
+        
+        return response_data
+    
+    except Exception as e:
+        print(f"Error in get_current_user_info: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
