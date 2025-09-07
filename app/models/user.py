@@ -1,8 +1,7 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from datetime import datetime
 import uuid
 
 try:
@@ -30,7 +29,7 @@ class User(Base):
     follower_count = Column(Integer, nullable=False)
     following_count = Column(Integer, nullable=False)
     
-    # Relationships - match actual database tables
+    # Relationships - match actual database tables ONLY
     skate_setups = relationship("SkateSetup", back_populates="user", cascade="all, delete-orphan")
 
 
@@ -52,33 +51,3 @@ class SkateSetup(Base):
     
     # Relationships
     user = relationship("User", back_populates="skate_setups")
-    __tablename__ = "skate_setups"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deck_brand = Column(String(100), nullable=False)
-    deck_size = Column(String(20), nullable=False)  
-    trucks = Column(String(100), nullable=False)
-    wheels = Column(String(100), nullable=False)
-    bearings = Column(String(100), nullable=False)
-    grip_tape = Column(String(100), nullable=False)
-    photo_url = Column(String(500))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationships
-    user = relationship("User", back_populates="skate_setups")
-
-
-class Follow(Base):
-    __tablename__ = "follows"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    follower_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    followed_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationships
-    follower = relationship("User", foreign_keys=[follower_id], back_populates="follows_as_follower")
-    followed = relationship("User", foreign_keys=[followed_id], back_populates="follows_as_followed")

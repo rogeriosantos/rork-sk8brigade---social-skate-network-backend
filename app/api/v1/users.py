@@ -58,18 +58,10 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check if current user follows this user
+    # Note: Follow functionality not implemented yet (no follows table in database)
+    # For now, set is_following to False
     if current_user:
-        from app.models.user import Follow
-        follow_result = await db.execute(
-            select(Follow).where(
-                and_(
-                    Follow.follower_id == current_user.id,
-                    Follow.followed_id == user_id
-                )
-            )
-        )
-        user.is_following = follow_result.scalar_one_or_none() is not None
+        user.is_following = False
     
     # Build response with skate setups if not a shop
     response_data = user.__dict__.copy()
@@ -242,54 +234,11 @@ async def follow_user(
     db: AsyncSession = Depends(get_db)
 ):
     """Follow a user"""
-    if user_id == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot follow yourself"
-        )
-    
-    # Check if user exists
-    target_user = await db.execute(select(User).where(User.id == user_id))
-    if not target_user.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Check if already following
-    from app.models.user import Follow
-    existing_follow = await db.execute(
-        select(Follow).where(
-            and_(
-                Follow.follower_id == current_user.id,
-                Follow.followed_id == user_id
-            )
-        )
+    # Follow functionality not implemented yet (no follows table in database)
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Follow functionality not implemented yet"
     )
-    
-    if existing_follow.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already following this user"
-        )
-    
-    # Create follow relationship
-    follow = Follow(follower_id=current_user.id, followed_id=user_id)
-    db.add(follow)
-    
-    # Update follow counts
-    await db.execute(
-        update(User)
-        .where(User.id == current_user.id)
-        .values(following_count=User.following_count + 1)
-    )
-    
-    await db.execute(
-        update(User)
-        .where(User.id == user_id)
-        .values(follower_count=User.follower_count + 1)
-    )
-    
-    await db.commit()
-    
-    return {"message": "User followed successfully"}
 
 
 @router.delete("/{user_id}/follow")
@@ -299,42 +248,11 @@ async def unfollow_user(
     db: AsyncSession = Depends(get_db)
 ):
     """Unfollow a user"""
-    # Find and delete follow relationship
-    from app.models.user import Follow
-    result = await db.execute(
-        select(Follow).where(
-            and_(
-                Follow.follower_id == current_user.id,
-                Follow.followed_id == user_id
-            )
-        )
+    # Unfollow functionality not implemented yet (no follows table in database)
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Unfollow functionality not implemented yet"
     )
-    
-    follow = result.scalar_one_or_none()
-    if not follow:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Not following this user"
-        )
-    
-    await db.delete(follow)
-    
-    # Update follow counts
-    await db.execute(
-        update(User)
-        .where(User.id == current_user.id)
-        .values(following_count=User.following_count - 1)
-    )
-    
-    await db.execute(
-        update(User)
-        .where(User.id == user_id)
-        .values(follower_count=User.follower_count - 1)
-    )
-    
-    await db.commit()
-    
-    return {"message": "User unfollowed successfully"}
 
 
 @router.get("/{user_id}/followers", response_model=List[UserResponse])
@@ -345,19 +263,11 @@ async def get_user_followers(
     db: AsyncSession = Depends(get_db)
 ):
     """Get user's followers"""
-    from app.models.user import Follow
-    query = (
-        select(User)
-        .join(Follow, User.id == Follow.follower_id)
-        .where(Follow.followed_id == user_id)
-        .offset(skip)
-        .limit(limit)
+    # Follow functionality not implemented yet (no follows table in database)
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Followers functionality not implemented yet"
     )
-    
-    result = await db.execute(query)
-    followers = result.scalars().all()
-    
-    return followers
 
 
 @router.get("/{user_id}/following", response_model=List[UserResponse])
@@ -368,16 +278,8 @@ async def get_user_following(
     db: AsyncSession = Depends(get_db)
 ):
     """Get users that this user is following"""
-    from app.models.user import Follow
-    query = (
-        select(User)
-        .join(Follow, User.id == Follow.followed_id)
-        .where(Follow.follower_id == user_id)
-        .offset(skip)
-        .limit(limit)
+    # Follow functionality not implemented yet (no follows table in database)
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Following functionality not implemented yet"
     )
-    
-    result = await db.execute(query)
-    following = result.scalars().all()
-    
-    return following
